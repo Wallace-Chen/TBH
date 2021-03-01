@@ -3,6 +3,8 @@ import tensorflow as tf
 from layer import encodec, twin_bottleneck
 from util.data.set_processor import SET_DIM
 
+# Model groups layers into an object with training and inference features
+# https://www.tensorflow.org/api_docs/python/tf/keras/Model
 
 # noinspection PyAbstractClass
 class TBH(tf.keras.Model):

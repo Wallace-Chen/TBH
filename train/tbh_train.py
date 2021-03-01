@@ -19,7 +19,9 @@ def adv_loss(real, fake):
     total_loss = real_loss + fake_loss
     return total_loss
 
-
+# compute half the l2 norm of a tensor: sum(t**2)/2
+# https://www.tensorflow.org/api_docs/python/tf/nn/l2_loss
+# tf.reduce_mean: If axis is None, all dimensions are reduced, and a tensor with a single element is returned.
 @tf.function
 def reconstruction_loss(pred, origin):
     return tf.reduce_mean(tf.nn.l2_loss(pred - origin))
@@ -29,6 +31,9 @@ def train_step(model: TBH, batch_data, bbn_dim, cbn_dim, batch_size, actor_opt: 
                critic_opt: tf.optimizers.Optimizer):
     random_binary = (tf.sign(tf.random.uniform([batch_size, bbn_dim]) - 0.5) + 1) / 2
     random_cont = tf.random.uniform([batch_size, cbn_dim])
+
+# tf.GradientTape: give exposure and record sequence of gradients
+# https://stackoverflow.com/questions/53953099/what-is-the-purpose-of-the-tensorflow-gradient-tape
 
     with tf.GradientTape() as actor_tape, tf.GradientTape() as critic_tape:
         model_input = [batch_data, random_binary, random_cont]

@@ -2,6 +2,8 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import tensorflow as tf
 from layer.binary_activation import binary_activation
 
+# Layer: the base class
+# https://www.tensorflow.org/api_docs/python/tf/keras/layers/Layer
 
 class Encoder(tf.keras.layers.Layer):
     def compute_output_signature(self, input_signature):
@@ -24,6 +26,7 @@ class Encoder(tf.keras.layers.Layer):
         batch_size = tf.shape(inputs)[0]
         fc_1 = self.fc_1(inputs)
         bbn = self.fc_2_1(fc_1)
+		# in the paper, eps should use the uniform random numbers.
         # eps = tf.cond(training, lambda: tf.random.uniform([batch_size, self.code_length], maxval=1),
         #               lambda: tf.ones([batch_size, self.code_length]) / 2.)
         eps = tf.ones([batch_size, self.code_length]) / 2.

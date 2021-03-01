@@ -13,6 +13,8 @@ def sigmoid_sign(logits, eps):
     code = (tf.sign(prob - eps) + 1.0) / 2.0
     return code, prob
 
+# tf.custom_gradient: decorator to define a function with a custom gradient
+# https://www.tensorflow.org/api_docs/python/tf/custom_gradient
 
 @tf.custom_gradient
 def binary_activation(logits, eps):

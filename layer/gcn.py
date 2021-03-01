@@ -22,6 +22,9 @@ class GCNLayer(tf.keras.layers.Layer):
         """
         return self.spectrum_conv(values, adjacency)
 
+# tf.function: compiles a function into a callable tensorflow graph
+# https://www.tensorflow.org/api_docs/python/tf/function
+
     @tf.function
     def spectrum_conv(self, values, adjacency):
         """
@@ -44,6 +47,6 @@ class GCNLayer(tf.keras.layers.Layer):
         graph_size = tf.shape(adjacency)[0]
         d = adjacency @ tf.ones([graph_size, 1])
         d_inv_sqrt = tf.pow(d + OVERFLOW_MARGIN, -0.5)
-        d_inv_sqrt = tf.eye(graph_size) * d_inv_sqrt
+        d_inv_sqrt = tf.eye(graph_size) * d_inv_sqrt # what is the purpose for the identity matrix?
         laplacian = d_inv_sqrt @ adjacency @ d_inv_sqrt
         return laplacian

@@ -26,6 +26,8 @@ class ParsedRecord(object):
             return _id, _feat, _label
 
         record_name = os.path.join(REPO_PATH, 'data', self.set_name, self.part_name + '.tfrecords')
+		# Most dataset input pipelines should end with a call to prefetch. This allows later elements to be prepared while the current element is being processed. This often improves latency and throughput, at the cost of using additional memory to store prefetched elements.
+		# https://github.com/Wallace-Chen/TBH/blob/master/util/data/dataset.py
         data = tf.data.TFRecordDataset(record_name).map(data_parser, num_parallel_calls=50).prefetch(self.batch_size)
         data = data.cache().repeat().shuffle(10000).batch(self.batch_size)
 

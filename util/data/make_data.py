@@ -4,6 +4,8 @@ from util.data.set_processor import SET_PROCESSOR, SET_SPLIT
 
 from meta import REPO_PATH
 
+# The TFRecord format is a simple format for storing a sequence of binary records.
+# https://www.tensorflow.org/tutorials/load_data/tfrecord
 
 # noinspection PyUnusedLocal
 def default_processor(root_folder):

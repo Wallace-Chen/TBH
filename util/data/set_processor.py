@@ -15,7 +15,7 @@ def cifar_processor(root_folder):
         data_mat = sio.loadmat(file_name)
         feat = data_mat[part + '_data']
         label = np.squeeze(data_mat[part + '_label'])
-        fid = np.arange(0, feat.shape[0])
+        fid = np.arange(0, feat.shape[0]) # convert to the one-hot vector
         label = np.eye(class_num)[label]
 
         return {'feat': feat, 'label': label, 'fid': fid}

@@ -15,7 +15,7 @@ def build_adjacency_hamming(tensor_in):
     c1 = tf.matmul(tensor_in, m1, transpose_b=True)
     c2 = tf.matmul(m1, tensor_in, transpose_b=True)
     normalized_dist = tf.math.abs(c1 + c2) / code_length
-    return tf.pow(1 - normalized_dist, 1.4)
+    return tf.pow(1 - normalized_dist, 1.4) # why power is 1.4?
 
 
 # noinspection PyAbstractClass
