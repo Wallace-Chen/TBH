@@ -65,7 +65,7 @@ def test_step(model: TBH, batch_data):
     return model_output.numpy()
 
 
-def train(set_name, bbn_dim, cbn_dim, batch_size, middle_dim=1024, max_iter=100000):
+def train(set_name, bbn_dim, cbn_dim, batch_size, middle_dim=1024, max_iter=80000):
     model = TBH(set_name, bbn_dim, cbn_dim, middle_dim)
 
     data = Dataset(set_name=set_name, batch_size=batch_size)
