@@ -107,9 +107,9 @@ def train(set_name, bbn_dim, cbn_dim, batch_size, middle_dim=1024, max_iter=1000
                 tf.summary.scalar('train/actor', actor_loss, step=i)
                 tf.summary.scalar('train/critic', critic_loss, step=i)
                 tf.summary.scalar('train/hook', train_hook, step=i)
-                tf.summary.scalar('train/precision', train_precision, step=i)
+#                tf.summary.scalar('train/precision', train_precision, step=i)
 
-                print('batch {}, actor {}, critic {}, map {}, precision {}'.format(i, actor_loss, critic_loss, train_hook,train_precision))
+                print('batch {}, actor {}, critic {}, map {}'.format(i, actor_loss, critic_loss, train_hook))
 
             if (i + 1) % 2000 == 0:
                 print('Testing!!!!!!!!')
@@ -125,7 +125,7 @@ def train(set_name, bbn_dim, cbn_dim, batch_size, middle_dim=1024, max_iter=1000
                 plt.figure()
                 plt.step(l_recall, l_pre, where='post')
                 plt.xlabel('Recall')
-                plt.tlabel('Precision')
+                plt.ylabel('Precision')
                 plt.xlim((0,1))
                 plt.ylim((0,1))
                 plt.savefig(os.path.join(summary_path, 'P-R.png'))
