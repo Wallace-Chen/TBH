@@ -78,7 +78,7 @@ def eval_cls_map(query, target, cls1, cls2, at=None):
             average_precision += precision / gt_count
             map_count += 1.
             _precision += gt_count / top_k
-        num_gt = len(np.where(sim_mat[i,:]>0))
+        num_gt = len(np.where(sim_mat[i,:]>0)[0])
         l_precision.append(gt_count / top_k)
         l_recall.append(gt_count / num_gt)
 
