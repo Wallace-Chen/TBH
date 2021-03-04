@@ -6,6 +6,7 @@ from util.eval_tools import eval_cls_map
 from meta import REPO_PATH
 import os
 from time import gmtime, strftime
+import matplotlib.pyplot as plt
 
 
 def hook(query, base, label_q, label_b):
@@ -101,13 +102,14 @@ def train(set_name, bbn_dim, cbn_dim, batch_size, middle_dim=1024, max_iter=1000
                 print(model.summary())
 
             if (i + 1) % 100 == 0:
-                train_hook = hook(train_code, train_code, train_label, train_label)
+                train_hook,train_precision,_,_ = hook(train_code, train_code, train_label, train_label)
 
                 tf.summary.scalar('train/actor', actor_loss, step=i)
                 tf.summary.scalar('train/critic', critic_loss, step=i)
                 tf.summary.scalar('train/hook', train_hook, step=i)
+                tf.summary.scalar('train/precision', train_precision, step=i)
 
-                print('batch {}: actor {}, critic {}'.format(i, actor_loss, critic_loss))
+                print('batch {}, actor {}, critic {}, map {}, precision {}'.format(i, actor_loss, critic_loss, train_hook,train_precision))
 
             if (i + 1) % 2000 == 0:
                 print('Testing!!!!!!!!')
@@ -116,8 +118,19 @@ def train(set_name, bbn_dim, cbn_dim, batch_size, middle_dim=1024, max_iter=1000
                 test_label = test_batch[2].numpy()
                 test_entry = test_batch[0].numpy()
                 data.update(test_entry, test_code, test_label, 'test')
-                test_hook = eval_cls_map(test_code, data.train_code, test_label, data.train_label, at=1000)
+                test_hook,test_precision,l_pre,l_recall = eval_cls_map(test_code, data.train_code, test_label, data.train_label, at=1000)
                 tf.summary.scalar('test/hook', test_hook, step=i)
+                tf.summary.scalar('test/precision', test_precision, step=i)
+                
+                plt.figure()
+                plt.step(l_recall, l_pre, where='post')
+                plt.xlabel('Recall')
+                plt.tlabel('Precision')
+                plt.xlim((0,1))
+                plt.ylim((0,1))
+                plt.savefig(os.path.join(summary_path, 'P-R.png'))
+                plt.close()
+                print('test_map {}, test_precision@1000 {}'.format(test_hook, test_precision))
 
                 save_name = os.path.join(save_path, 'ymmodel' + str(i) )
                 checkpoint.save(file_prefix=save_name)

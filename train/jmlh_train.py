@@ -73,7 +73,7 @@ def train(set_name, bbn_dim, batch_size, max_iter=100000):
                 print(model.summary())
 
             if (i + 1) % 100 == 0:
-                train_hook = eval_cls_map(train_code, train_code, train_label, train_label)
+                train_hook,_,_,_ = eval_cls_map(train_code, train_code, train_label, train_label)
 
                 tf.summary.scalar('train/loss', loss, step=i)
                 tf.summary.scalar('train/hook', train_hook, step=i)
@@ -87,7 +87,7 @@ def train(set_name, bbn_dim, batch_size, max_iter=100000):
                 test_label = test_batch[2].numpy()
                 test_entry = test_batch[0].numpy()
                 data.update(test_entry, test_code, test_label, 'test')
-                test_hook = eval_cls_map(test_code, data.train_code, test_label, data.train_label, at=1000)
+                test_hook,_,_,_ = eval_cls_map(test_code, data.train_code, test_label, data.train_label, at=1000)
                 tf.summary.scalar('test/hook', test_hook, step=i)
 
                 save_name = os.path.join(save_path, 'ymmodel' + str(i))

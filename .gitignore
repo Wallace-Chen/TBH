@@ -1,2 +1,4 @@
-./cifar10/
+./result/
 ./data/
+*.pyc
+*.mat
