@@ -86,4 +86,4 @@ def eval_cls_map(query, target, cls1, cls2, at=None):
         pr_curve = pr_curve[:, pr_curve[0].argsort()]
         pr_curve /= query_size
 
-    return average_precision / map_count, _precision / map_count,l_precision,l_recall
+    return average_precision / map_count, _precision / map_count,pr_curve

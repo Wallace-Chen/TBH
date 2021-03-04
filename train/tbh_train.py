@@ -103,7 +103,7 @@ def train(set_name, bbn_dim, cbn_dim, batch_size, middle_dim=1024, max_iter=8000
                 print(model.summary())
 
             if (i + 1) % 100 == 0:
-                train_hook,train_precision,_,_ = hook(train_code, train_code, train_label, train_label)
+                train_hook,train_precision,_ = hook(train_code, train_code, train_label, train_label)
 
                 tf.summary.scalar('train/actor', actor_loss, step=i)
                 tf.summary.scalar('train/critic', critic_loss, step=i)
@@ -119,12 +119,12 @@ def train(set_name, bbn_dim, cbn_dim, batch_size, middle_dim=1024, max_iter=8000
                 test_label = test_batch[2].numpy()
                 test_entry = test_batch[0].numpy()
                 data.update(test_entry, test_code, test_label, 'test')
-                test_hook,test_precision,l_pre,l_recall = eval_cls_map(test_code, data.train_code, test_label, data.train_label, at=1000)
+                test_hook,test_precision,pr_curve = eval_cls_map(test_code, data.train_code, test_label, data.train_label, at=1000)
                 tf.summary.scalar('test/hook', test_hook, step=i)
                 tf.summary.scalar('test/precision', test_precision, step=i)
                 
                 plt.figure()
-                plt.step(l_recall, l_pre, where='post')
+                plt.step(list(pr_curve[1,:]), list(pr_curve[0,:]), where='post')
                 plt.xlabel('Recall')
                 plt.ylabel('Precision')
                 plt.xlim((0,1))
@@ -132,8 +132,8 @@ def train(set_name, bbn_dim, cbn_dim, batch_size, middle_dim=1024, max_iter=8000
                 plt.savefig(os.path.join(summary_path, 'P-R.png'))
                 plt.close()
                 with open(os.path.join(summary_path,'PRLists.data'), 'wb') as f:
-                    pickle.dump(l_pre, f)
-                    pickle.dump(l_recall, f)
+                    pickle.dump(list(pr_curve[0,:]), f)
+                    pickle.dump(list(pr_curve[1,:]), f)
                 print('test_map {}, test_precision@1000 {}'.format(test_hook, test_precision))
 
                 save_name = os.path.join(save_path, 'ymmodel' + str(i) )
