@@ -53,7 +53,7 @@ def eval_cls_map(query, target, cls1, cls2, at=None):
     _precision = 0.
     total_items = dist_argsort.shape[1]
 
-	pr_curve = np.zeros((2, total_items))
+    pr_curve = np.zeros((2, total_items))
 
     for i in range(query_size):
         gt_count = 0.
