@@ -75,10 +75,10 @@ def eval_cls_map(query, target, cls1, cls2, at=None):
             this_ind = dist_argsort[i, j]
             if sim_mat[i, this_ind] > 0:
                 corr_items += 1
-				if j<top_k:
+                if j<top_k:
                     gt_count += 1.
                     precision += gt_count / (j + 1.)
-            l_precision.append(corr_items / j+1)
+            l_precision.append(corr_items / (j+1))
             l_recall.append(corr_items / num_gt)
         if gt_count > 0:
             average_precision += precision / gt_count
