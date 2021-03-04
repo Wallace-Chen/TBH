@@ -120,9 +120,9 @@ def train(set_name, bbn_dim, cbn_dim, batch_size, middle_dim=1024, max_iter=8000
                 test_entry = test_batch[0].numpy()
                 data.update(test_entry, test_code, test_label, 'test')
                 if (i+1) < max_iter:
-                    test_hook,test_precision,pr_curve = eval_cls_map(test_code, data.train_code, test_label, data.train_label, at=1000)
+                    test_hook,test_precision,pr_curve = eval_cls_map(test_code, data.train_code, test_label, data.train_label, 1000)
                 else:
-                    test_hook,test_precision,pr_curve = eval_cls_map(test_code, data.train_code, test_label, data.train_label, at=1000, True)
+                    test_hook,test_precision,pr_curve = eval_cls_map(test_code, data.train_code, test_label, data.train_label, 1000, True)
                 tf.summary.scalar('test/hook', test_hook, step=i)
                 tf.summary.scalar('test/precision', test_precision, step=i)
                 
