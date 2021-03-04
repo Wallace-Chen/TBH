@@ -7,6 +7,7 @@ from meta import REPO_PATH
 import os
 from time import gmtime, strftime
 import matplotlib.pyplot as plt
+import pickle
 
 
 def hook(query, base, label_q, label_b):
@@ -130,6 +131,9 @@ def train(set_name, bbn_dim, cbn_dim, batch_size, middle_dim=1024, max_iter=8000
                 plt.ylim((0,1))
                 plt.savefig(os.path.join(summary_path, 'P-R.png'))
                 plt.close()
+                with open(os.path.join(summary_path,'PRLists.data'), 'wb') as f:
+                    pickle.dump(l_pre, f)
+                    pickle.dump(l_recall, f)
                 print('test_map {}, test_precision@1000 {}'.format(test_hook, test_precision))
 
                 save_name = os.path.join(save_path, 'ymmodel' + str(i) )
