@@ -112,7 +112,7 @@ def train(set_name, bbn_dim, cbn_dim, batch_size, middle_dim=1024, max_iter=8000
 
                 print('batch {}, actor {}, critic {}, map {}'.format(i, actor_loss, critic_loss, train_hook))
 
-            if (i + 1) % 2000 == 0:
+            if (i + 1) % 1000 == 0:
                 print('Testing!!!!!!!!')
                 test_batch = next(test_iter)
                 test_code = test_step(model, test_batch)
@@ -124,7 +124,7 @@ def train(set_name, bbn_dim, cbn_dim, batch_size, middle_dim=1024, max_iter=8000
                 tf.summary.scalar('test/precision', test_precision, step=i)
                 
                 plt.figure()
-                plt.step(l_recall, l_pre, where='post')
+                plt.scatter(l_recall, l_pre, where='post')
                 plt.xlabel('Recall')
                 plt.ylabel('Precision')
                 plt.xlim((0,1))
