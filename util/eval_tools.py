@@ -33,7 +33,7 @@ def compute_hamming_dist(a, b):
     return np.abs(c1 + c2)
 
 
-def eval_cls_map(query, target, cls1, cls2, at=None):
+def eval_cls_map(query, target, cls1, cls2, at=None, computePR=False):
     """
     Mean average precision computation
     :param query:
@@ -52,6 +52,8 @@ def eval_cls_map(query, target, cls1, cls2, at=None):
     average_precision = 0.
     _precision = 0.
     total_items = dist_argsort.shape[1]
+    top_k = at if at is not None else total_items
+    if not computePR: total_items = top_k
 
     pr_curve = np.zeros((2, total_items))
 
@@ -68,7 +70,6 @@ def eval_cls_map(query, target, cls1, cls2, at=None):
         #
         #     if gt_count >= count_size > 0:
         #         break
-        top_k = at if at is not None else dist_argsort.shape[1]
         num_gt = len(np.where(sim_mat[i,:]>0)[0])
         for j in range(total_items):
             this_ind = dist_argsort[i, j]

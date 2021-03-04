@@ -108,9 +108,9 @@ def train(set_name, bbn_dim, cbn_dim, batch_size, middle_dim=1024, max_iter=8000
                 tf.summary.scalar('train/actor', actor_loss, step=i)
                 tf.summary.scalar('train/critic', critic_loss, step=i)
                 tf.summary.scalar('train/hook', train_hook, step=i)
-#                tf.summary.scalar('train/precision', train_precision, step=i)
+                tf.summary.scalar('train/precision', train_precision, step=i)
 
-                print('batch {}, actor {}, critic {}, map {}'.format(i, actor_loss, critic_loss, train_hook))
+                print('batch {}, actor {}, critic {}, map {}, precision {}'.format(i, actor_loss, critic_loss, train_hook, train_precision))
 
             if (i + 1) % 1000 == 0:
                 print('Testing!!!!!!!!')
