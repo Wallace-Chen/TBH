@@ -124,7 +124,7 @@ def train(set_name, bbn_dim, cbn_dim, batch_size, middle_dim=1024, max_iter=8000
                 tf.summary.scalar('test/precision', test_precision, step=i)
                 
                 plt.figure()
-                plt.scatter(l_recall, l_pre, where='post')
+                plt.step(l_recall, l_pre, where='post')
                 plt.xlabel('Recall')
                 plt.ylabel('Precision')
                 plt.xlim((0,1))
