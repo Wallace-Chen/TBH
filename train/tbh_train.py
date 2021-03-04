@@ -112,14 +112,17 @@ def train(set_name, bbn_dim, cbn_dim, batch_size, middle_dim=1024, max_iter=8000
 
                 print('batch {}, actor {}, critic {}, map {}, precision {}'.format(i, actor_loss, critic_loss, train_hook, train_precision))
 
-            if (i + 1) % 1000 == 0:
+            if (i + 1) % 2000 == 0:
                 print('Testing!!!!!!!!')
                 test_batch = next(test_iter)
                 test_code = test_step(model, test_batch)
                 test_label = test_batch[2].numpy()
                 test_entry = test_batch[0].numpy()
                 data.update(test_entry, test_code, test_label, 'test')
-                test_hook,test_precision,pr_curve = eval_cls_map(test_code, data.train_code, test_label, data.train_label, at=1000)
+                if (i+1) < max_iter:
+                    test_hook,test_precision,pr_curve = eval_cls_map(test_code, data.train_code, test_label, data.train_label, at=1000)
+                else:
+                    test_hook,test_precision,pr_curve = eval_cls_map(test_code, data.train_code, test_label, data.train_label, at=1000, True)
                 tf.summary.scalar('test/hook', test_hook, step=i)
                 tf.summary.scalar('test/precision', test_precision, step=i)
                 
