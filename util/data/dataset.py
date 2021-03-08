@@ -10,6 +10,7 @@ class ParsedRecord(object):
         self.set_name = kwargs.get('set_name', 'cifar10')
         self.part_name = kwargs.get('part_name', 'train')
         self.batch_size = kwargs.get('batch_size', 256)
+        self.shuffle = kwargs.get('shuffle', True)
 
         self.data = self._load_data()
 
@@ -29,7 +30,10 @@ class ParsedRecord(object):
 		# Most dataset input pipelines should end with a call to prefetch. This allows later elements to be prepared while the current element is being processed. This often improves latency and throughput, at the cost of using additional memory to store prefetched elements.
 		# https://github.com/Wallace-Chen/TBH/blob/master/util/data/dataset.py
         data = tf.data.TFRecordDataset(record_name).map(data_parser, num_parallel_calls=50).prefetch(self.batch_size)
-        data = data.cache().repeat().shuffle(10000).batch(self.batch_size)
+        if self.shuffle:
+            data = data.cache().repeat().shuffle(10000).batch(self.batch_size)
+        else:
+            data = data.cache().repeat().batch(self.batch_size)
 
         # data = data.cache().repeat().batch(self.batch_size)
 
@@ -45,6 +49,7 @@ class Dataset(object):
         self.set_name = kwargs.get('set_name', 'cifar10')
         self.batch_size = kwargs.get('batch_size', 256)
         self.code_length = kwargs.get('code_length', 32)
+        self.shuffle = kwargs.get('shuffle', True)
         self._load_data()
         set_size = SET_SIZE.get(self.set_name)
         self.train_code = np.zeros([set_size[0], self.code_length])
@@ -56,7 +61,8 @@ class Dataset(object):
         # 1. training data
         settings = {'set_name': self.set_name,
                     'batch_size': self.batch_size,
-                    'part_name': SET_SPLIT[0]}
+                    'part_name': SET_SPLIT[0],
+                    'shuffle': self.shuffle}
         self.train_data = ParsedRecord(**settings).data
 
         # 2. test data

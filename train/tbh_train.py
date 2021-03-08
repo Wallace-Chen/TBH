@@ -3,12 +3,10 @@ import tensorflow as tf
 from model.tbh import TBH
 from util.data.dataset import Dataset
 from util.eval_tools import eval_cls_map
+from util.plot_PR import make_PR_plot, update_codes
 from meta import REPO_PATH
 import os
 from time import gmtime, strftime
-import matplotlib.pyplot as plt
-import pickle
-
 
 def hook(query, base, label_q, label_b):
     return eval_cls_map(query, base, label_q, label_b)
@@ -121,22 +119,14 @@ def train(set_name, bbn_dim, cbn_dim, batch_size, middle_dim=1024, max_iter=8000
                 data.update(test_entry, test_code, test_label, 'test')
                 if (i+1) < max_iter:
                     test_hook,test_precision,pr_curve = eval_cls_map(test_code, data.train_code, test_label, data.train_label, 1000)
-                else:
-                    test_hook,test_precision,pr_curve = eval_cls_map(test_code, data.train_code, test_label, data.train_label, 1000, True)
+                else: # reach the max iteration, now update code for all test_data in order to plot PR curve
+                    data = Dataset(set_name=set_name, batch_size=batch_size, shuffle=False)
+                    update_codes(model, data, batch_size,set_name)
+                    test_hook,test_precision,pr_curve = eval_cls_map(data.test_code, data.train_code, test_label, data.train_label, 1000, True)
+                    make_PR_plot(summary_path, pr_curve)
                 tf.summary.scalar('test/hook', test_hook, step=i)
                 tf.summary.scalar('test/precision', test_precision, step=i)
                 
-                plt.figure()
-                plt.step(list(pr_curve[1,:]), list(pr_curve[0,:]), where='post')
-                plt.xlabel('Recall')
-                plt.ylabel('Precision')
-                plt.xlim((0,1))
-                plt.ylim((0,1))
-                plt.savefig(os.path.join(summary_path, 'P-R.png'))
-                plt.close()
-                with open(os.path.join(summary_path,'PRLists.data'), 'wb') as f:
-                    pickle.dump(list(pr_curve[0,:]), f)
-                    pickle.dump(list(pr_curve[1,:]), f)
                 print('test_map {}, test_precision@1000 {}'.format(test_hook, test_precision))
 
                 save_name = os.path.join(save_path, 'ymmodel' + str(i) )

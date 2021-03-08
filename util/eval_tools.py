@@ -54,6 +54,7 @@ def eval_cls_map(query, target, cls1, cls2, at=None, computePR=False):
     total_items = dist_argsort.shape[1]
     top_k = at if at is not None else total_items
     if not computePR: total_items = top_k
+    pr_count = 0
 
     pr_curve = np.zeros((2, total_items))
 
@@ -71,6 +72,11 @@ def eval_cls_map(query, target, cls1, cls2, at=None, computePR=False):
         #     if gt_count >= count_size > 0:
         #         break
         num_gt = len(np.where(sim_mat[i,:]>0)[0])
+        pr_count += (num_gt>0)
+        if(num_gt==0):
+            print("Error, num_gt is {}, i is {}".format(num_gt, i))
+            print(cls1[i])
+            print(sim_mat[i,:])
         for j in range(total_items):
             this_ind = dist_argsort[i, j]
             if sim_mat[i, this_ind] > 0:
@@ -78,13 +84,14 @@ def eval_cls_map(query, target, cls1, cls2, at=None, computePR=False):
                 if j<top_k:
                     gt_count += 1.
                     precision += gt_count / (j + 1.)
-            pr_curve[0,j] += corr_items / (j+1)
-            pr_curve[1,j] += corr_items / num_gt
+            if(num_gt>0):
+                pr_curve[0,j] += corr_items / (j+1)
+                pr_curve[1,j] += corr_items / num_gt
         if gt_count > 0:
             average_precision += precision / gt_count
             map_count += 1.
             _precision += gt_count / top_k
     pr_curve = pr_curve[:, pr_curve[0].argsort()]
-    pr_curve /= query_size
+    pr_curve /= pr_count
 
     return average_precision / map_count, _precision / map_count,pr_curve
