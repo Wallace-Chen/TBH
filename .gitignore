@@ -1,4 +1,7 @@
-./result/
-./data/
+result/
+data/.DS_Store
+data/cifar10
 *.pyc
 *.mat
+*.index
+*.tfrecords
