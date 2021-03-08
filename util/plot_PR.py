@@ -53,7 +53,10 @@ def load_weights(set_name, bbn_dim, cbn_dim, batch_size, middle_dim, path):
     model = TBH(set_name, bbn_dim, cbn_dim, middle_dim)
     data = Dataset(set_name=set_name, batch_size=batch_size, shuffle=False)
 
-    checkpoint = tf.train.Checkpoint( model=model )
+    actor_opt = tf.keras.optimizers.Adam(1e-4)
+    critic_opt = tf.keras.optimizers.Adam(1e-4)
+
+    checkpoint = tf.train.Checkpoint( actor_opt=actor_opt, critic_opt=critic_opt, model=model )
     checkpoint.restore(tf.train.latest_checkpoint(path))
     update_codes(model,data,batch_size,set_name)
     
