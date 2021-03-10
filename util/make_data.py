@@ -8,15 +8,17 @@ import sys
 sess = tf.compat.v1.Session()
 np.set_printoptions(threshold=sys.maxsize)
 
-folder = '/Users/yuanchen/Documents/University of Geneva/Thesis/L2H/Reproduce/test/'
+folder = '/Users/yuanchen/Documents/University of Geneva/Thesis/L2H/Reproduce/test/NUS-WIDE'
 test_names = ['test_batch.mat']
 train_names = ['data_batch_1.mat', 'data_batch_2.mat', 'data_batch_3.mat', 'data_batch_4.mat', 'data_batch_5.mat']
 
+feat_dim = 500
 #feat_dim = 512
-feat_dim = 2048
+#feat_dim = 2048
 #feat_dim = 3072
 #feat_dim = 4096
-class_num = 10
+#class_num = 10
+class_num = 21
 
 def _int64_feature(value):
     """Create a feature that is serialized as an int64."""
@@ -71,7 +73,8 @@ def convert_data_from_npz(name):
 		for i in range(size):
 			this_id = _int64_feature(i)
 			this_feat = _float_feature(data[i, :])
-			this_label = _float_feature(np.eye(class_num)[label[i]])
+#			this_label = _float_feature(np.eye(class_num)[label[i]])
+			this_label = _float_feature(label[i,:])
 			feat_dict = {'id': this_id,
 						 'feat': this_feat,
 						 'label': this_label}
@@ -82,7 +85,8 @@ def convert_data_from_npz(name):
 
 	out_path = os.path.join(folder, 'out_'+name)
 	if not os.path.exists(out_path): os.makedirs(out_path)
-	data = np.load(os.path.join(folder, "CIFAR10_{}-keras.npz".format(name)))
+#	data = np.load(os.path.join(folder, "CIFAR10_{}-keras.npz".format(name)))
+	data = np.load(os.path.join(folder, "{}.npz".format(name)))
 
 	print(" running training data...")
 	file_name = os.path.join(out_path, 'train.tfrecords')
@@ -125,22 +129,7 @@ def disp_data(p,f):
 			f.write(' '.join( [str(e) for e in _feat] ))
 			f.write('\n')
 #			f.write(np.array2string(_feat, precision=1, separator=','))
-		
-#convert_data_from_npz("incv3")
-#convert_data_from_npz("resnet50")
-#convert_data_from_npz("vgg16")
-#convert_data_from_npz("vgg19")
 
-#print("processing training data")
-#convert_data(train_names, "train")
-#print("processing test data")
-#convert_data(test_names, "test")
+#convert_data_from_npz("bow_data")
 
-#disp_data("out_incv3", "train.tfrecords")
-#disp_data("out_incv3", "test.tfrecords")
-disp_data("out_resnet50", "train.tfrecords")
-disp_data("out_resnet50", "test.tfrecords")
-#disp_data("out_vgg16", "train.tfrecords")
-#disp_data("out_vgg16", "test.tfrecords")
-#disp_data("out_vgg19", "train.tfrecords")
-#disp_data("out_vgg19", "test.tfrecords")
+disp_data("out_bow_data", "test.tfrecords")
