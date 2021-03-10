@@ -5,9 +5,9 @@ import os
 SET_SPLIT = ['train', 'test']
 #SET_DIM = {'cifar10': 4096}
 #SET_DIM = {'cifar10': 3072}
-SET_DIM = {'cifar10': 2048}
-SET_LABEL = {'cifar10': 10}
-SET_SIZE = {'cifar10': [50000, 10000]}
+SET_DIM = {'cifar10': 2048, 'nus-wide': 500}
+SET_LABEL = {'cifar10': 10, 'nus-wide': 21}
+SET_SIZE = {'cifar10': [50000, 10000], 'nus-wide': [10500,2100]}
 
 
 def cifar_processor(root_folder):
