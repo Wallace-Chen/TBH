@@ -1,0 +1,11 @@
+This folder helps you with preparing NUS-WIDE dataset.
+
+What we will do is to download label information and raw images, which are then converted to numpy arrays.
+Note the downloading raw images could takes very long time (~24 hours), or one could implement a multi-thread program, which is not considered here.
+
+1. Go to https://lms.comp.nus.edu.sg/wp-content/uploads/2019/research/nuswide/NUS-WIDE to download Groudtruth, Concept List, Image List, Image Urls.
+2. Preprocess label information to filter labels with at least 5000 samples with save_top_concept() function in the preprocess.py file.
+3. Run save_map() function in the download_convert.py to construct a mapping from uid to the pid(photo id) to be used later to retrieve photo easier.
+4. Now download raw images using download_relevent_pics() function. Again this may take quite a long time (~24 hours).
+5. Install pillow module to play with images. Given raw images, we need to convert them into numpy arrays and build the link to the corresponding labels, using convert_to_array() function. This step again takes quite a long time (~12 hours)
+6. Finally, do a testing and training data split using split_test_train() function.
