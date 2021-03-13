@@ -10,6 +10,7 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 valFile = 'annotations/instances_val2014.json'
 trainFile = 'annotations/instances_train2014.json'
 
+# num per file
 num_test = 200
 num_train = 2000
 
@@ -105,7 +106,6 @@ def split_test_train(folder):
 						features_testing = X_test,\
 						label_testing = Y_test)
 	
-
-#convert_to_array(folder)
-split_test_train(folder)
-
+if __name__ == '__main__':
+	#convert_to_array(folder)
+	split_test_train(folder)
