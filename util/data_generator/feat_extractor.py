@@ -14,8 +14,9 @@ from keras import backend as K
 
 #tf.disable_v2_behavior()
 tf.compat.v1.disable_eager_execution()
-
-_id = 3
+#num_train = 48000 #58000
+#num_test = 4800 #2900
+_id = 0
 networks = ['incv3', 'resnet50', 'vgg16', 'vgg19']
 selected_network = networks[_id]
 
@@ -24,19 +25,24 @@ selected_network = networks[_id]
 
 
 # Load Cifar-10 data
-from keras.datasets import cifar10
-(X_train, y_train), (X_test, y_test) = cifar10.load_data()
+#from keras.datasets import cifar10
+#(X_train, y_train), (X_test, y_test) = cifar10.load_data()
+#y_train = y_train.flatten()
+#y_test  = y_test.flatten()
+
+# Load NUS-WIDE/MS-COCO data from local npz file
+data = np.load('./test_train.npz')
+X_train, y_train, X_test, y_test = data['features_training'], data['label_training'], data['features_testing'], data['label_testing']
 
 n_training = X_train.shape[0]
 n_testing = X_test.shape[0]
 
-y_train = y_train.flatten()
-y_test  = y_test.flatten()
-
 print(y_train)
+print(y_train.shape)
+print(np.sum(y_train, axis=0))
 
 
-# In[3]:
+# In[6]:
 
 
 # Create model
@@ -87,18 +93,18 @@ create_model = {
 }[selected_network]
 
 
-# In[4]:
+# In[7]:
 
 
 # Data generator for tensorflow
-#batch_of_images_placeholder = tf.placeholder("uint8", (None, 32, 32, 3))
-batch_of_images_placeholder = tf.compat.v1.placeholder("uint8", (None, 32, 32, 3))
+#batch_of_images_placeholder = tf.compat.v1.placeholder("uint8", (None, 32, 32, 3))
+batch_of_images_placeholder = tf.compat.v1.placeholder("uint8", (None, 256,256,3))
 
 batchSize = {
-    'incv3'    : 8,
-    'resnet50' : 8,
-    'vgg16'    : 8,
-    'vgg19'    : 8
+    'incv3'    : 50,
+    'resnet50' : 50,
+    'vgg16'    : 50,
+    'vgg19'    : 50
 }[selected_network]
 
 #tf_resize_op = tf.image.resize_images(batch_of_images_placeholder, (input_shape[:2]), method=0)
@@ -135,7 +141,7 @@ def data_generator(sess,data,labels):
     return generator
 
 
-# In[5]:
+# In[18]:
 
 
 _config = tf.compat.v1.ConfigProto()
@@ -151,11 +157,14 @@ with tf.compat.v1.Session(config=_config) as sess:
         #print(model.summary())
 
         data_train_gen = data_generator(sess, X_train, y_train)
-        ftrs_training = model.predict(x=data_train_gen(), steps=int(50000/batchSize), verbose=1)
+        ftrs_training = model.predict(x=data_train_gen(), steps=int(n_training/batchSize), verbose=1)
 
         data_test_gen = data_generator(sess, X_test, y_test)
-        ftrs_testing = model.predict(x=data_test_gen(), steps=int(10000/batchSize), verbose=1)
-
+        ftrs_testing = model.predict(x=data_test_gen(), steps=int(n_testing/batchSize), verbose=1)
+        
+        print(ftrs_training.shape)
+        print(ftrs_testing.shape)
+        
         features_training = np.array( [ftrs_training[i].flatten() for i in range(n_training)] )
         features_testing = np.array( [ftrs_testing[i].flatten() for i in range(n_testing)] )
 
@@ -164,5 +173,7 @@ with tf.compat.v1.Session(config=_config) as sess:
 
         print(features_training[0])
         
-        np.savez_compressed(r'E:\Users\yuan\MasterThesis\TBH\data\test\CIFAR10_{}-keras.npz'.format(selected_network),                             features_training=features_training,                             features_testing=features_testing,                             label_training=y_train,                             label_testing=y_test)
+        #np.savez_compressed(r'E:\Users\yuan\MasterThesis\TBH\data\test\CIFAR10_{}-keras.npz'.format(selected_network), \
+        #np.savez_compressed(r'E:\Users\yuan\MasterThesis\TBH\data\test\NUS-WIDE_{}-keras.npz'.format(selected_network), \
+        np.savez_compressed(r'E:\Users\yuan\MasterThesis\TBH\data\test\MS-COCO_{}-keras.npz'.format(selected_network),                             features_training=features_training,                             features_testing=features_testing,                             label_training=y_train,                             label_testing=y_test)
 
