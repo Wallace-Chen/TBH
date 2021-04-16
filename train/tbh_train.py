@@ -46,8 +46,8 @@ def train_step(model: TBH, batch_data, bbn_dim, cbn_dim, batch_size, actor_opt: 
 #        critic_loss = adv_loss(model_output[4], model_output[2]) + adv_loss(model_output[5], model_output[3])
 # Testing Code: critic_loss = adv_loss
         actor_loss = reconstruction_loss(model_output[1], batch_data[1]) \
-                     + tf.reduce_mean(tf.keras.losses.binary_crossentropy(tf.ones_like(model_output[2]), model_output[2]))\
-                     + tf.reduce_mean(tf.keras.losses.binary_crossentropy(tf.ones_like(model_output[3]), model_output[3]))
+                     - tf.reduce_mean(tf.keras.losses.binary_crossentropy(tf.ones_like(model_output[2]), model_output[2]))\
+                     - tf.reduce_mean(tf.keras.losses.binary_crossentropy(tf.ones_like(model_output[3]), model_output[3]))
                      # log(d(x'))
                      #+ adv_loss(model_output[4], model_output[2]) \
                      #+ adv_loss(model_output[5], model_output[3])
