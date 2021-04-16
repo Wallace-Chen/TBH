@@ -38,12 +38,22 @@ def train_step(model: TBH, batch_data, bbn_dim, cbn_dim, batch_size, actor_opt: 
     with tf.GradientTape() as actor_tape, tf.GradientTape() as critic_tape:
         model_input = [batch_data, random_binary, random_cont]
         model_output = model(model_input, training=True)
+# Original Code
+#        actor_loss = reconstruction_loss(model_output[1], batch_data[1]) - \
+#                     adv_loss(model_output[4], model_output[2]) - \
+#                     adv_loss(model_output[5], model_output[3])
 
-        actor_loss = reconstruction_loss(model_output[1], batch_data[1]) - \
-                     adv_loss(model_output[4], model_output[2]) - \
-                     adv_loss(model_output[5], model_output[3])
-
-        critic_loss = adv_loss(model_output[4], model_output[2]) + adv_loss(model_output[5], model_output[3])
+#        critic_loss = adv_loss(model_output[4], model_output[2]) + adv_loss(model_output[5], model_output[3])
+# Testing Code: critic_loss = adv_loss
+        actor_loss = reconstruction_loss(model_output[1], batch_data[1]) \
+                     + tf.reduce_mean(tf.keras.losses.binary_crossentropy(tf.ones_like(model_output[2]), model_output[2]))\
+                     + tf.reduce_mean(tf.keras.losses.binary_crossentropy(tf.ones_like(model_output[3]), model_output[3]))
+                     # log(d(x'))
+                     #+ adv_loss(model_output[4], model_output[2]) \
+                     #+ adv_loss(model_output[5], model_output[3])
+                     # adv_loss
+                     
+        critic_loss = -adv_loss(model_output[4], model_output[2]) - adv_loss(model_output[5], model_output[3])
 
         actor_scope = model.encoder.trainable_variables + model.tbn.trainable_variables + \
                       model.decoder.trainable_variables
@@ -122,7 +132,7 @@ def train(set_name, bbn_dim, cbn_dim, batch_size, middle_dim=1024, max_iter=8000
                 else: # reach the max iteration, now update code for all test_data in order to plot PR curve
                     data = Dataset(set_name=set_name, batch_size=batch_size, shuffle=False)
                     update_codes(model, data, batch_size,set_name)
-                    test_hook,test_precision,pr_curve = eval_cls_map(data.test_code, data.train_code, test_label, data.train_label, 1000, True)
+                    test_hook,test_precision,pr_curve = eval_cls_map(data.test_code, data.train_code, data.test_label, data.train_label, 1000, True)
                     make_PR_plot(summary_path, pr_curve)
                 tf.summary.scalar('test/hook', test_hook, step=i)
                 tf.summary.scalar('test/precision', test_precision, step=i)

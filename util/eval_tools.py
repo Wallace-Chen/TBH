@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 def gen_sim_mat(class_list1, class_list2):
@@ -44,6 +45,9 @@ def eval_cls_map(query, target, cls1, cls2, at=None, computePR=False):
     :return:
     """
     sim_mat = gen_sim_mat(cls1, cls2)
+#    test_sim = np.sum(sim_mat, axis=1)
+#    print(len(test_sim))
+#    print(np.sum(test_sim))
     query_size = query.shape[0]
     distances = compute_hamming_dist(query, target)
     dist_argsort = np.argsort(distances)

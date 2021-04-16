@@ -8,7 +8,7 @@ from model.tbh import TBH
 from util.data.dataset import Dataset
 from util.eval_tools import eval_cls_map
 from util.data.set_processor import SET_SIZE
-#np.set_printoptions(threshold=sys.maxsize)
+np.set_printoptions(threshold=sys.maxsize)
 
 def update_codes(model, data, batch_size, set_name):
     """
@@ -63,7 +63,12 @@ def load_weights(set_name, bbn_dim, cbn_dim, batch_size, middle_dim, path):
     print("updating codes for the dataset and plot PR code...")
     test_hook,test_precision,pr_curve = eval_cls_map(data.test_code, data.train_code, data.test_label, data.train_label, 1000, True)
     make_PR_plot(path, pr_curve)
+    print("The mPA is: {}".format(test_hook))
+    print("The mean precision@1000 is: {}".format(test_precision))
 
 if __name__ == '__main__':
-    load_weights('cifar10', 32, 512, 500, 1024, "/Users/yuanchen/Documents/University of Geneva/Thesis/L2H/Reproduce/TBH/result/cifar10/model/Mon08Mar2021-102000/")
+#    load_weights('cifar10', 32, 512, 100, 1024, r"E:\Users\yuan\MasterThesis\TBH\result\cifar10\model\Mon08Mar2021-002425_incv3")
+    load_weights('cifar10', 32, 512, 100, 1024, r"E:\Users\yuan\MasterThesis\TBH\result\cifar10\model\Mon15Mar2021-135101-criticloss_actorlogloss")
+#    load_weights('nus-wide', 32, 512, 100, 1024, r"E:\Users\yuan\MasterThesis\TBH\result\nus-wide\model\Fri12Mar2021-115501")
+#    load_weights('ms-coco', 32, 512, 100, 1024, r"E:\Users\yuan\MasterThesis\TBH\result\ms-coco\model\Sat13Mar2021-112144") 
 
