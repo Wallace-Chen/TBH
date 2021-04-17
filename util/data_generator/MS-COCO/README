@@ -1,9 +1,0 @@
-This folder helps you with preparing MS-COCO dataset.
-
-What we will do is to download label information and raw images, which are then converted to numpy arrays.
-
-1. Go to https://cocodataset.org/#download to download annotations and images. There are different dataset splits available. Here we use the 2014 data as an example.
-2. Install COCO API https://github.com/cocodataset/cocoapi so that we can retrieve labels for each image. Also install pillow module in order to manipulate with the image.
-3. With all materials, we can convert raw images into numpy arrays with convert_to_array() function in the convert_to_array file. Note that you may need to run it twice, one for training set and another for testing set. This step agains around 12 hours.
-4. Finally, do a testing and training data split using split_test_train() function.
-
