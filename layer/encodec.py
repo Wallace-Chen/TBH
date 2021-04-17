@@ -51,6 +51,18 @@ class Decoder(tf.keras.layers.Layer):
         fc_1 = self.fc_1(inputs)
         return self.fc_2(fc_1)
 
+# newly-add classifier
+class Classifier(tf.keras.layers.Layer):
+    def __init__(self, lamda, label_dim):
+        """
+        :param bbn_dim: binary bottleneck size
+        :param label_dim: number of total classes
+        """
+        super(Classifier, self).__init__()
+        self.fc = tf.keras.layers.Dense(label_dim, activation='sigmoid', activity_regularizer=tf.keras.regularizers.L2(lamda))
+
+    def call(self, inputs, **kwargs):
+        return self.fc(inputs)
 
 if __name__ == '__main__':
     a = tf.ones([2, 4096], dtype=tf.float32)

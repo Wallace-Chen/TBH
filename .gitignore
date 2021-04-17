@@ -5,3 +5,4 @@ data/cifar10
 **/*.mat
 **/*.index
 **/*.tfrecords
+**/*swp

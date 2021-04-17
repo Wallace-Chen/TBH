@@ -26,6 +26,8 @@ def adv_loss(real, fake):
 def reconstruction_loss(pred, origin):
     return tf.reduce_mean(tf.nn.l2_loss(pred - origin))
 
+def classification_loss(pred, origin):
+    return tf.reduce_mean(tf.nn.l2_loss(pred - origin))
 
 def train_step(model: TBH, batch_data, bbn_dim, cbn_dim, batch_size, actor_opt: tf.optimizers.Optimizer,
                critic_opt: tf.optimizers.Optimizer):
@@ -45,7 +47,9 @@ def train_step(model: TBH, batch_data, bbn_dim, cbn_dim, batch_size, actor_opt: 
 
 #        critic_loss = adv_loss(model_output[4], model_output[2]) + adv_loss(model_output[5], model_output[3])
 # Testing Code: critic_loss = adv_loss
-        actor_loss = reconstruction_loss(model_output[1], batch_data[1]) \
+        class_loss = classification_loss(model_output[6], batch_data[2])
+        regre_loss = tf.compat.v1.losses.get_regularization_loss()
+        actor_loss = reconstruction_loss(model_output[1], batch_data[1]) + class_loss + regre_loss \
                      - tf.reduce_mean(tf.keras.losses.binary_crossentropy(tf.ones_like(model_output[2]), model_output[2]))\
                      - tf.reduce_mean(tf.keras.losses.binary_crossentropy(tf.ones_like(model_output[3]), model_output[3]))
                      # log(d(x'))
