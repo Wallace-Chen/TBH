@@ -27,7 +27,8 @@ def reconstruction_loss(pred, origin):
     return tf.reduce_mean(tf.nn.l2_loss(pred - origin))
 
 def classification_loss(pred, origin):
-    return tf.reduce_mean(tf.nn.l2_loss(pred - origin))
+    _origin = tf.cast(origin, dtype=tf.float32)
+    return tf.reduce_mean(tf.nn.l2_loss(pred - _origin))
 
 def train_step(model: TBH, batch_data, bbn_dim, cbn_dim, batch_size, actor_opt: tf.optimizers.Optimizer,
                critic_opt: tf.optimizers.Optimizer):
