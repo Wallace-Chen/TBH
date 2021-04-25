@@ -59,7 +59,7 @@ class Classifier(tf.keras.layers.Layer):
         :param label_dim: number of total classes
         """
         super(Classifier, self).__init__()
-        self.fc = tf.keras.layers.Dense(label_dim, activation='sigmoid', activity_regularizer=tf.keras.regularizers.L2(lamda))
+        self.fc = tf.keras.layers.Dense(label_dim, activation='sigmoid', kernel_regularizer=tf.keras.regularizers.L1(lamda))
 
     def call(self, inputs, **kwargs):
         return self.fc(inputs)

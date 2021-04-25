@@ -31,7 +31,7 @@ def classification_loss(pred, origin):
     return tf.reduce_mean(tf.nn.l2_loss(pred - _origin))
 
 def train_step(model: TBH, batch_data, bbn_dim, cbn_dim, batch_size, actor_opt: tf.optimizers.Optimizer,
-               critic_opt: tf.optimizers.Optimizer):
+               critic_opt: tf.optimizers.Optimizer, supervised=False):
     random_binary = (tf.sign(tf.random.uniform([batch_size, bbn_dim]) - 0.5) + 1) / 2
     random_cont = tf.random.uniform([batch_size, cbn_dim])
 
@@ -48,9 +48,16 @@ def train_step(model: TBH, batch_data, bbn_dim, cbn_dim, batch_size, actor_opt: 
 
 #        critic_loss = adv_loss(model_output[4], model_output[2]) + adv_loss(model_output[5], model_output[3])
 # Testing Code: critic_loss = adv_loss
-        class_loss = classification_loss(model_output[6], batch_data[2])
-        regre_loss = tf.compat.v1.losses.get_regularization_loss()
-        actor_loss = reconstruction_loss(model_output[1], batch_data[1]) + class_loss + regre_loss \
+        class_loss = 5 * classification_loss(model_output[6], batch_data[2])
+#        regul_loss = tf.compat.v1.losses.get_regularization_loss()
+#        regul_loss = sum(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.REGULARIZATION_LOSSES)) 
+        regul_loss = tf.add_n(model_output[7].fc.losses)
+        if not supervised:
+            class_loss = 0
+            regul_loss = 0
+#        print("classification loss: {}\n".format(class_loss))
+#        print("regularization loss: {}\n".format(regul_loss))
+        actor_loss = reconstruction_loss(model_output[1], batch_data[1]) + class_loss + regul_loss\
                      - tf.reduce_mean(tf.keras.losses.binary_crossentropy(tf.ones_like(model_output[2]), model_output[2]))\
                      - tf.reduce_mean(tf.keras.losses.binary_crossentropy(tf.ones_like(model_output[3]), model_output[3]))
                      # log(d(x'))
@@ -59,9 +66,13 @@ def train_step(model: TBH, batch_data, bbn_dim, cbn_dim, batch_size, actor_opt: 
                      # adv_loss
                      
         critic_loss = -adv_loss(model_output[4], model_output[2]) - adv_loss(model_output[5], model_output[3])
+        if supervised:
+            actor_scope = model.encoder.trainable_variables + model.tbn.trainable_variables + \
+                        model.decoder.trainable_variables + model.classifier.trainable_variables
+        else:
+            actor_scope = model.encoder.trainable_variables + model.tbn.trainable_variables + \
+                        model.decoder.trainable_variables
 
-        actor_scope = model.encoder.trainable_variables + model.tbn.trainable_variables + \
-                      model.decoder.trainable_variables
         critic_scope = model.dis_1.trainable_variables + model.dis_2.trainable_variables
 
         actor_gradient = actor_tape.gradient(actor_loss, sources=actor_scope)
@@ -70,7 +81,7 @@ def train_step(model: TBH, batch_data, bbn_dim, cbn_dim, batch_size, actor_opt: 
         actor_opt.apply_gradients(zip(actor_gradient, actor_scope))
         critic_opt.apply_gradients(zip(critic_gradient, critic_scope))
 
-    return model_output[0].numpy(), actor_loss.numpy(), critic_loss.numpy()
+    return model_output[0].numpy(), actor_loss.numpy(), critic_loss.numpy(), class_loss, regul_loss
 
 
 def test_step(model: TBH, batch_data):
@@ -79,10 +90,11 @@ def test_step(model: TBH, batch_data):
     return model_output.numpy()
 
 
-def train(set_name, bbn_dim, cbn_dim, batch_size, middle_dim=1024, max_iter=80000):
+def train(set_name, bbn_dim, cbn_dim, batch_size, supervised=False, middle_dim=1024, max_iter=80000):
+    tf.random.set_seed(1234)
     model = TBH(set_name, bbn_dim, cbn_dim, middle_dim)
 
-    data = Dataset(set_name=set_name, batch_size=batch_size)
+    data = Dataset(set_name=set_name, batch_size=batch_size, shuffle=False)
 
     actor_opt = tf.keras.optimizers.Adam(1e-4)
     critic_opt = tf.keras.optimizers.Adam(1e-4)
@@ -105,9 +117,9 @@ def train(set_name, bbn_dim, cbn_dim, batch_size, middle_dim=1024, max_iter=8000
     for i in range(max_iter):
         with writer.as_default():
             train_batch = next(train_iter)
-            train_code, actor_loss, critic_loss = train_step(model, train_batch, bbn_dim, cbn_dim, batch_size,
+            train_code, actor_loss, critic_loss,class_loss,regul_loss = train_step(model, train_batch, bbn_dim, cbn_dim, batch_size,
                                                              actor_opt,
-                                                             critic_opt)
+                                                             critic_opt, supervised)
             train_label = train_batch[2].numpy()
             train_entry = train_batch[0].numpy()
             data.update(train_entry, train_code, train_label, 'train')
@@ -120,6 +132,8 @@ def train(set_name, bbn_dim, cbn_dim, batch_size, middle_dim=1024, max_iter=8000
 
                 tf.summary.scalar('train/actor', actor_loss, step=i)
                 tf.summary.scalar('train/critic', critic_loss, step=i)
+                tf.summary.scalar('train/regression_loss', class_loss, step=i)
+                tf.summary.scalar('train/regularizaion_loss', regul_loss, step=i)
                 tf.summary.scalar('train/hook', train_hook, step=i)
                 tf.summary.scalar('train/precision', train_precision, step=i)
 

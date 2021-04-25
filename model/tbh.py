@@ -24,7 +24,7 @@ class TBH(tf.keras.Model):
         self.dis_1 = tf.keras.layers.Dense(1, activation='sigmoid')
         self.dis_2 = tf.keras.layers.Dense(1, activation='sigmoid')
 
-        self.classifier = encodec.Classifier(0.1, self.label_dim)
+        self.classifier = encodec.Classifier(1, self.label_dim)
 
     def call(self, inputs, training=True, mask=None):
         feat_in = tf.cast(inputs[0][1], dtype=tf.float32)
@@ -40,6 +40,6 @@ class TBH(tf.keras.Model):
             dis_1_sample = self.dis_1(sample_bbn)
             dis_2_sample = self.dis_2(sample_bn)
             label_predict = self.classifier(bbn)
-            return bbn, feat_out, dis_1, dis_2, dis_1_sample, dis_2_sample, label_predict
+            return bbn, feat_out, dis_1, dis_2, dis_1_sample, dis_2_sample, label_predict, self.classifier
         else:
             return bbn
