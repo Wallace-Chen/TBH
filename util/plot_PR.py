@@ -50,13 +50,13 @@ def make_PR_plot(path, data):
         pickle.dump(list(data[0,:]), f)
         pickle.dump(list(data[1,:]), f)
 
-def load_weights(set_name, bbn_dim, cbn_dim, batch_size, middle_dim, path):
+def load_weights(set_name, bbn_dim, cbn_dim, batch_size, middle_dim, path, fold_num=0):
     """
     create model and load it with pre-trained weights stored under the path
 	"""
     print("loading weights from {}".format(path))
     model = TBH(set_name, bbn_dim, cbn_dim, middle_dim)
-    data = Dataset(set_name=set_name, batch_size=batch_size, shuffle=False)
+    data = Dataset(set_name=set_name, batch_size=batch_size, shuffle=False, kfold=fold_num, code_length=bbn_dim)
 
     actor_opt = tf.keras.optimizers.Adam(1e-4)
     critic_opt = tf.keras.optimizers.Adam(1e-4)
@@ -77,6 +77,28 @@ def load_weights(set_name, bbn_dim, cbn_dim, batch_size, middle_dim, path):
     make_PR_plot(path, pr_curve)
     print("The mPA is: {}".format(test_hook))
     print("The mean precision@1000 is: {}".format(test_precision))
+    return test_hook, test_precision
+
+def load_kfold(set_name, bbn_dim, cbn_dim, batch_size, middle_dim, path):
+    kfold = 6
+    hooks = []
+    precs = []
+    for i in range(1, kfold+1):
+        model_path = os.path.join(path, "model_{}".format(i))
+        hook, prec = load_weights(set_name, bbn_dim, cbn_dim, batch_size, middle_dim, model_path, i)
+        hooks.append(hook)
+        precs.append(prec)
+    result_f = "results.txt"
+    if os.path.isfile(os.path.join( path, result_f )): result_f = "results_recompute.txt"
+    with open( os.path.join(path,result_f) ) as f:
+        f.write("MAPS:")
+        f.write(" ".join(hooks))
+        f.write("precision@1000:")
+        f.write(" ".join(precs))
+    print("MAP: ")
+    print(hooks)
+    print("precision@1000: ")
+    print(precs)
 
 def get_dists(labels, codes, label_dim):
     print("total {} samples\n".format(codes.shape[0]))
@@ -401,7 +423,7 @@ def compare_distribution(name, label_dim, path1, leg1, path2, leg2, normalize=Fa
 
 if __name__ == '__main__':
 #    load_weights('ms-coco', 32, 512, 100, 1024, r"E:\Users\yuan\MasterThesis\TBH\result\ms-coco\model\Sat13Mar2021-112144") 
-    load_weights('cifar10', 32, 512, 100, 1024, r"/Users/yuanchen/Documents/University of Geneva/Thesis/L2H/Reproduce/results/cifar10/model/compare/Sun18Apr2021-125100_incv3_-criticloss_actor-logloss")
+#    load_weights('cifar10', 32, 512, 100, 1024, r"/Users/yuanchen/Documents/University of Geneva/Thesis/L2H/Reproduce/results/cifar10/model/compare/Sun18Apr2021-125100_incv3_-criticloss_actor-logloss")
 #    load_weights('cifar10', 32, 512, 100, 1024, r"/Users/yuanchen/Documents/University of Geneva/Thesis/L2H/Reproduce/results/cifar10/model/compare/Sun18Apr2021-181709_incv3_criticloss_actor-logloss_supervised_1")
 #    load_weights('cifar10', 32, 512, 100, 1024, r"/Users/yuanchen/Documents/University of Geneva/Thesis/L2H/Reproduce/results/cifar10/model/compare/Sun18Apr2021-215535_incv3_-criticloss_actor-logloss_supervised_10")
 #    load_weights('cifar10', 32, 512, 100, 1024, r"/Users/yuanchen/Documents/University of Geneva/Thesis/L2H/Reproduce/results/cifar10/model/compare/Mon19Apr2021-081941_incv3_-criticloss_actor-logloss_supervised_1_regression_10")
@@ -413,6 +435,25 @@ if __name__ == '__main__':
 #    load_weights('ms-coco', 32, 512, 100, 1024, r"/Users/yuanchen/Documents/University of Geneva/Thesis/L2H/Reproduce/results/ms-coco/model/compare/Mon19Apr2021-124910_unsupervised") 
 #    load_weights('ms-coco', 32, 512, 100, 1024, r"/Users/yuanchen/Documents/University of Geneva/Thesis/L2H/Reproduce/results/ms-coco/model/compare/Mon19Apr2021-142248_supervised_1_regression_1") 
 #    load_weights('ms-coco', 32, 512, 100, 1024, r"/Users/yuanchen/Documents/University of Geneva/Thesis/L2H/Reproduce/results/ms-coco/model/compare/Tue20Apr2021-095547_supervised_1_regression_5") 
+
+    load_kfold('cifar10', 32, 512, 500, 1024, \
+            r"E:\Users\yuan\MasterThesis\TBH\result\cifar10\Tue27Apr2021-225947_kfold6"
+            )
+    load_kfold('cifar10', 32, 512, 500, 1024, \
+            r"E:\Users\yuan\MasterThesis\TBH\result\cifar10\Wed28Apr2021-233318lr0.0001sup_eta1_lamda1"
+            )
+    load_kfold('cifar10', 32, 512, 500, 1024, \
+            r"E:\Users\yuan\MasterThesis\TBH\result\cifar10\Thu29Apr2021-035933lr0.0001sup_eta5_lamda1"
+            )
+#    load_kfold('cifar10', 32, 512, 500, 1024, \
+#            r"E:\Users\yuan\MasterThesis\TBH\result\cifar10\Thu29Apr2021-082613lr0.0001sup_eta10_lamda1"
+#            )
+#    load_kfold('cifar10', 32, 512, 500, 1024, \
+#            r"E:\Users\yuan\MasterThesis\TBH\result\cifar10\Thu29Apr2021-125315lr0.0001sup_eta15_lamda1"
+#            )
+#    load_kfold('cifar10', 32, 512, 500, 1024, \
+#            r"E:\Users\yuan\MasterThesis\TBH\result\cifar10\Thu29Apr2021-172030lr0.0001sup_eta20_lamda1"
+#            )
 
 #    plot_distribution('cifar10', 10, r"/Users/yuanchen/Documents/University of Geneva/Thesis/L2H/Reproduce/results/cifar10/model/compare/Sun18Apr2021-125100_incv3_-criticloss_actor-logloss")
 #    plot_distribution('cifar10', 10, r"/Users/yuanchen/Documents/University of Geneva/Thesis/L2H/Reproduce/results/cifar10/model/compare/Sun18Apr2021-181709_incv3_criticloss_actor-logloss_supervised_1") 

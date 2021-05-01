@@ -16,8 +16,10 @@ folder = r"E:\Users\yuan\MasterThesis\TBH\data\test\out_NUS-WIDE_incv3-keras"
 
 total_images = 269648
 
-num_test = 100 #  *28
+num_test = 400 #  *28
 num_train = 2000 # *28
+num_files = 25
+
 
 def download_pic(url, name):
     try:
@@ -111,24 +113,23 @@ def convert_to_array(label_file, mapping_file, folder):
     print("Total {} images have been saved".format(5000*f_cnt + cnt))
 
 def split_test_train(folder):
-    for i in  range(29):
+    X_train = np.zeros((num_train*num_file,256,256,3), dtype='uint8')
+    X_test = np.zeros((num_test*num_file,256,256,3), dtype='uint8')
+    Y_train = np.zeros((num_train*num_file,21), dtype='uint8')
+    Y_test = np.zeros((num_test*num_file,21), dtype='uint8')
+    start_train = 0
+    start_test = 0
+    for i in range(num_file):
         f_name = os.path.join(folder, "data_{}.npz".format(i))
         print("processing  the file  {}...".format(f_name))
         d = np.load(f_name)
         data = d["data"]
         label = d["label"]
         _X_train, _X_test, _Y_train, _Y_test = train_test_split(data, label, train_size=num_train, test_size=num_test, random_state=10, shuffle=True)
-        X_train = np.zeros((num_train*29,256,256,3))
-        X_test = np.zeros((num_test*29,256,256,3))
-        Y_train = np.zeros((num_train*29,21))
-        Y_test = np.zeros((num_test*29,21))
-        start_train = 0
-        start_test = 0
-       
         X_train[start_train:start_train+num_train, :,:,:] = _X_train
         X_test[start_test:start_test+num_test, :,:,:] = _X_test
-        Y_train[start_train:start_train+num_train, :,:,:] = _Y_train
-        Y_test[start_test:start_test+num_test, :,:,:] = _Y_test
+        Y_train[start_train:start_train+num_train, :] = _Y_train
+        Y_test[start_test:start_test+num_test, :] = _Y_test
         start_train += num_train
         start_test += num_test
 

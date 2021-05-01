@@ -31,7 +31,7 @@ def classification_loss(pred, origin):
     return tf.reduce_mean(tf.nn.l2_loss(pred - _origin))
 
 def train_step(model: TBH, batch_data, bbn_dim, cbn_dim, batch_size, actor_opt: tf.optimizers.Optimizer,
-               critic_opt: tf.optimizers.Optimizer, supervised=False):
+               critic_opt: tf.optimizers.Optimizer, supervised=False, eta=1, lamda=1):
     random_binary = (tf.sign(tf.random.uniform([batch_size, bbn_dim]) - 0.5) + 1) / 2
     random_cont = tf.random.uniform([batch_size, cbn_dim])
 
@@ -48,18 +48,18 @@ def train_step(model: TBH, batch_data, bbn_dim, cbn_dim, batch_size, actor_opt: 
 
 #        critic_loss = adv_loss(model_output[4], model_output[2]) + adv_loss(model_output[5], model_output[3])
 # Testing Code: critic_loss = adv_loss
-        class_loss = 5 * classification_loss(model_output[6], batch_data[2])
+        class_loss = eta * classification_loss(model_output[6], batch_data[2])
 #        regul_loss = tf.compat.v1.losses.get_regularization_loss()
 #        regul_loss = sum(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.REGULARIZATION_LOSSES)) 
-        regul_loss = tf.add_n(model_output[7].fc.losses)
+        regul_loss = eta * tf.add_n(model_output[7].fc.losses)
         if not supervised:
             class_loss = 0
             regul_loss = 0
 #        print("classification loss: {}\n".format(class_loss))
 #        print("regularization loss: {}\n".format(regul_loss))
         actor_loss = reconstruction_loss(model_output[1], batch_data[1]) + class_loss + regul_loss\
-                     - tf.reduce_mean(tf.keras.losses.binary_crossentropy(tf.ones_like(model_output[2]), model_output[2]))\
-                     - tf.reduce_mean(tf.keras.losses.binary_crossentropy(tf.ones_like(model_output[3]), model_output[3]))
+                     - lamda * tf.reduce_mean(tf.keras.losses.binary_crossentropy(tf.ones_like(model_output[2]), model_output[2]))\
+                     - lamda * tf.reduce_mean(tf.keras.losses.binary_crossentropy(tf.ones_like(model_output[3]), model_output[3]))
                      # log(d(x'))
                      #+ adv_loss(model_output[4], model_output[2]) \
                      #+ adv_loss(model_output[5], model_output[3])
@@ -90,22 +90,24 @@ def test_step(model: TBH, batch_data):
     return model_output.numpy()
 
 
-def train(set_name, bbn_dim, cbn_dim, batch_size, supervised=False, middle_dim=1024, max_iter=80000):
+def train(set_name, bbn_dim, cbn_dim, batch_size, time_string, fold_num = 0, supervised=False, eta=1, lamda=1, middle_dim=1024, max_iter=30000, lr=1e-4):
     tf.random.set_seed(1234)
     model = TBH(set_name, bbn_dim, cbn_dim, middle_dim)
 
-    data = Dataset(set_name=set_name, batch_size=batch_size, shuffle=False)
+    data = Dataset(set_name=set_name, batch_size=batch_size, shuffle=False, kfold=fold_num, code_length=bbn_dim)
 
-    actor_opt = tf.keras.optimizers.Adam(1e-4)
-    critic_opt = tf.keras.optimizers.Adam(1e-4)
+    actor_opt = tf.keras.optimizers.Adam(lr)
+    critic_opt = tf.keras.optimizers.Adam(lr)
 
     train_iter = iter(data.train_data)
     test_iter = iter(data.test_data)
 
-    time_string = strftime("%a%d%b%Y-%H%M%S", gmtime())
-    result_path = os.path.join(REPO_PATH, 'result', set_name)
-    save_path = os.path.join(result_path, 'model', time_string)
-    summary_path = os.path.join(result_path, 'log', time_string)
+    postfix = "lr{}".format(lr)
+    if supervised:
+        postfix += "sup_eta{}_lamda{}".format(eta, lamda)
+    result_path = os.path.join(REPO_PATH, 'result', set_name, time_string+postfix)
+    save_path = os.path.join(result_path, 'model_{}'.format(fold_num))
+    summary_path = os.path.join(result_path, 'log_{}'.format(fold_num))
     if not os.path.exists(result_path):
         os.makedirs(result_path)
     if not os.path.exists(save_path):
@@ -114,12 +116,14 @@ def train(set_name, bbn_dim, cbn_dim, batch_size, supervised=False, middle_dim=1
     writer = tf.summary.create_file_writer(summary_path)
     checkpoint = tf.train.Checkpoint(actor_opt=actor_opt, critic_opt=critic_opt, model=model)
 
+    test_hook = 0
+    test_precision = 0
     for i in range(max_iter):
         with writer.as_default():
             train_batch = next(train_iter)
             train_code, actor_loss, critic_loss,class_loss,regul_loss = train_step(model, train_batch, bbn_dim, cbn_dim, batch_size,
                                                              actor_opt,
-                                                             critic_opt, supervised)
+                                                             critic_opt, supervised, eta)
             train_label = train_batch[2].numpy()
             train_entry = train_batch[0].numpy()
             data.update(train_entry, train_code, train_label, 'train')
@@ -137,9 +141,9 @@ def train(set_name, bbn_dim, cbn_dim, batch_size, supervised=False, middle_dim=1
                 tf.summary.scalar('train/hook', train_hook, step=i)
                 tf.summary.scalar('train/precision', train_precision, step=i)
 
-                print('batch {}, actor {}, critic {}, map {}, precision {}'.format(i, actor_loss, critic_loss, train_hook, train_precision))
+                print(' kfold {}: batch {}, actor {}, critic {}, map {}, precision {}'.format(fold_num, i, actor_loss, critic_loss, train_hook, train_precision))
 
-            if (i + 1) % 2000 == 0:
+            if (i + 1) % 1000 == 0:
                 print('Testing!!!!!!!!')
                 test_batch = next(test_iter)
                 test_code = test_step(model, test_batch)
@@ -149,18 +153,42 @@ def train(set_name, bbn_dim, cbn_dim, batch_size, supervised=False, middle_dim=1
                 if (i+1) < max_iter:
                     test_hook,test_precision,pr_curve = eval_cls_map(test_code, data.train_code, test_label, data.train_label, 1000)
                 else: # reach the max iteration, now update code for all test_data in order to plot PR curve
-                    data = Dataset(set_name=set_name, batch_size=batch_size, shuffle=False)
+                    data = Dataset(set_name=set_name, batch_size=batch_size, shuffle=False, kfold=fold_num, code_length=bbn_dim)
                     update_codes(model, data, batch_size,set_name)
                     test_hook,test_precision,pr_curve = eval_cls_map(data.test_code, data.train_code, data.test_label, data.train_label, 1000, True)
                     make_PR_plot(summary_path, pr_curve)
                 tf.summary.scalar('test/hook', test_hook, step=i)
                 tf.summary.scalar('test/precision', test_precision, step=i)
                 
-                print('test_map {}, test_precision@1000 {}'.format(test_hook, test_precision))
+                print('  test_map {}, test_precision@1000 {}'.format(test_hook, test_precision))
 
                 save_name = os.path.join(save_path, 'ymmodel' + str(i) )
                 checkpoint.save(file_prefix=save_name)
+    return test_hook, test_precision
 
+def train_kfold(set_name, bbn_dim, cbn_dim, batch_size, supervised=False, eta=1, lamda=1, middle_dim=1024, max_iter=30000):
+    hooks = []
+    precs = []
+    time_string = strftime("%a%d%b%Y-%H%M%S", gmtime())
+    kfold = 6
+    for i in range(1, kfold+1):
+        hook, prec = train(set_name, bbn_dim, cbn_dim, batch_size, time_string, i, supervised, eta, lamda, middle_dim, max_iter)
+        hooks.append(hook)
+        precs.append(prec)
+    lr = 1e-4
+    postfix = "lr{}".format(lr)
+    if supervised:
+        postfix += "sup_eta{}_lamda{}".format(eta, lamda)
+    result_path = os.path.join(REPO_PATH, 'result', set_name, time_string+postfix)
+    with open(os.path.join(result_path, "results.txt"), 'w') as f:
+        f.write("MAPS:")
+        f.write(" ".join(hooks))
+        f.write("precision@1000:")
+        f.write(" ".join(precs))
+    print("MAP: ")
+    print(hooks)
+    print("precision@1000: ")
+    print(precs)
 
 if __name__ == '__main__':
     train('cifar10', 32, 512, 400)

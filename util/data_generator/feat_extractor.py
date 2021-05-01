@@ -20,26 +20,28 @@ _id = 0
 networks = ['incv3', 'resnet50', 'vgg16', 'vgg19']
 selected_network = networks[_id]
 
-
 # In[2]:
 
 
 # Load Cifar-10 data
-#from keras.datasets import cifar10
-#(X_train, y_train), (X_test, y_test) = cifar10.load_data()
-#y_train = y_train.flatten()
-#y_test  = y_test.flatten()
+from keras.datasets import cifar10
+(X_train, y_train), (X_test, y_test) = cifar10.load_data()
+y_train = y_train.flatten()
+y_test  = y_test.flatten()
 
 # Load NUS-WIDE/MS-COCO data from local npz file
-data = np.load('./test_train.npz')
-X_train, y_train, X_test, y_test = data['features_training'], data['label_training'], data['features_testing'], data['label_testing']
+#data = np.load('./test_train.npz')
+#X_train, y_train, X_test, y_test = data['features_training'], data['label_training'], data['features_testing'], data['label_testing']
 
-n_training = X_train.shape[0]
-n_testing = X_test.shape[0]
+inputs = np.concatenate((X_train, X_test), axis=0)
+targets = np.concatenate((y_train, y_test), axis=0)
 
-print(y_train)
-print(y_train.shape)
-print(np.sum(y_train, axis=0))
+#n_training = X_train.shape[0]
+#n_testing = X_test.shape[0]
+
+#print(y_train)
+#print(y_train.shape)
+#print(np.sum(y_train, axis=0))
 
 
 # In[6]:
@@ -154,26 +156,22 @@ with tf.compat.v1.Session(config=_config) as sess:
 	#K.set_learning_phase(0)  # 0 - test,  1 - train
 
         model = create_model()
-        #print(model.summary())
-
-        data_train_gen = data_generator(sess, X_train, y_train)
+       # print(model.summary())
+        
+        n_training = inputs.shape[0]
+            
+        data_train_gen = data_generator(sess, inputs, targets)
         ftrs_training = model.predict(x=data_train_gen(), steps=int(n_training/batchSize), verbose=1)
-
-        data_test_gen = data_generator(sess, X_test, y_test)
-        ftrs_testing = model.predict(x=data_test_gen(), steps=int(n_testing/batchSize), verbose=1)
         
-        print(ftrs_training.shape)
-        print(ftrs_testing.shape)
-        
-        features_training = np.array( [ftrs_training[i].flatten() for i in range(n_training)] )
-        features_testing = np.array( [ftrs_testing[i].flatten() for i in range(n_testing)] )
+        inputs = np.array( [ftrs_training[i].flatten() for i in range(n_training)] )
 
-        print(features_training.shape)
-        print(features_testing.shape)
+        #print(features_training.shape)
+        #print(features_testing.shape)
 
-        print(features_training[0])
+        #print(features_training[0])
         
-        #np.savez_compressed(r'E:\Users\yuan\MasterThesis\TBH\data\test\CIFAR10_{}-keras.npz'.format(selected_network), \
+        np.savez_compressed(r'E:\Users\yuan\MasterThesis\TBH\data\test\CIFAR10_{}-all.npz'.format(selected_network), \
+                            features=inputs, \
+                            labels=targets)
         #np.savez_compressed(r'E:\Users\yuan\MasterThesis\TBH\data\test\NUS-WIDE_{}-keras.npz'.format(selected_network), \
-        np.savez_compressed(r'E:\Users\yuan\MasterThesis\TBH\data\test\MS-COCO_{}-keras.npz'.format(selected_network),                             features_training=features_training,                             features_testing=features_testing,                             label_training=y_train,                             label_testing=y_test)
-
+        #np.savez_compressed(r'E:\Users\yuan\MasterThesis\TBH\data\test\MS-COCO_{}-keras.npz'.format(selected_network), \
