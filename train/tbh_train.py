@@ -31,7 +31,7 @@ def classification_loss(pred, origin):
     return tf.reduce_mean(tf.nn.l2_loss(pred - _origin))
 
 def train_step(model: TBH, batch_data, bbn_dim, cbn_dim, batch_size, actor_opt: tf.optimizers.Optimizer,
-               critic_opt: tf.optimizers.Optimizer, supervised=False, eta=1, lamda=1):
+               critic_opt: tf.optimizers.Optimizer, supervised=False, gamma=1, eta=1, lamda=1):
     random_binary = (tf.sign(tf.random.uniform([batch_size, bbn_dim]) - 0.5) + 1) / 2
     random_cont = tf.random.uniform([batch_size, cbn_dim])
 
@@ -48,9 +48,11 @@ def train_step(model: TBH, batch_data, bbn_dim, cbn_dim, batch_size, actor_opt: 
 
 #        critic_loss = adv_loss(model_output[4], model_output[2]) + adv_loss(model_output[5], model_output[3])
 # Testing Code: critic_loss = adv_loss
-        class_loss = eta * classification_loss(model_output[6], batch_data[2])
+        class_loss = gamma * classification_loss(model_output[6], batch_data[2])
 #        regul_loss = tf.compat.v1.losses.get_regularization_loss()
 #        regul_loss = sum(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.REGULARIZATION_LOSSES)) 
+        if eta == 1:
+            eta = gamma
         regul_loss = eta * tf.add_n(model_output[7].fc.losses)
         if not supervised:
             class_loss = 0
@@ -90,7 +92,7 @@ def test_step(model: TBH, batch_data):
     return model_output.numpy()
 
 
-def train(set_name, bbn_dim, cbn_dim, batch_size, time_string, fold_num = 0, supervised=False, eta=1, lamda=1, middle_dim=1024, max_iter=30000, lr=1e-4):
+def train(set_name, bbn_dim, cbn_dim, batch_size, time_string, fold_num = 0, supervised=False, gamma=1, eta=1, lamda=1, middle_dim=1024, max_iter=30000, lr=1e-4):
     tf.random.set_seed(1234)
     model = TBH(set_name, bbn_dim, cbn_dim, middle_dim)
 
@@ -104,7 +106,7 @@ def train(set_name, bbn_dim, cbn_dim, batch_size, time_string, fold_num = 0, sup
 
     postfix = "lr{}".format(lr)
     if supervised:
-        postfix += "sup_eta{}_lamda{}".format(eta, lamda)
+        postfix += "sup_gamma{}_eta{}_lamda{}".format(gamma, eta, lamda)
     result_path = os.path.join(REPO_PATH, 'result', set_name, time_string+postfix)
     save_path = os.path.join(result_path, 'model_{}'.format(fold_num))
     summary_path = os.path.join(result_path, 'log_{}'.format(fold_num))
@@ -123,7 +125,7 @@ def train(set_name, bbn_dim, cbn_dim, batch_size, time_string, fold_num = 0, sup
             train_batch = next(train_iter)
             train_code, actor_loss, critic_loss,class_loss,regul_loss = train_step(model, train_batch, bbn_dim, cbn_dim, batch_size,
                                                              actor_opt,
-                                                             critic_opt, supervised, eta)
+                                                             critic_opt, supervised, gamma, eta)
             train_label = train_batch[2].numpy()
             train_entry = train_batch[0].numpy()
             data.update(train_entry, train_code, train_label, 'train')
@@ -141,9 +143,9 @@ def train(set_name, bbn_dim, cbn_dim, batch_size, time_string, fold_num = 0, sup
                 tf.summary.scalar('train/hook', train_hook, step=i)
                 tf.summary.scalar('train/precision', train_precision, step=i)
 
-                print(' kfold {}: batch {}, actor {}, critic {}, map {}, precision {}'.format(fold_num, i, actor_loss, critic_loss, train_hook, train_precision))
+                print(' kfold {}: batch {}, actor {}, critic {}, regression_loss {}, regularization loss {}, map {}, precision {}'.format(fold_num, i, actor_loss, critic_loss, class_loss, regul_loss, train_hook, train_precision))
 
-            if (i + 1) % 1000 == 0:
+            if (i + 1) % 1500 == 0:
                 print('Testing!!!!!!!!')
                 test_batch = next(test_iter)
                 test_code = test_step(model, test_batch)
@@ -155,8 +157,11 @@ def train(set_name, bbn_dim, cbn_dim, batch_size, time_string, fold_num = 0, sup
                 else: # reach the max iteration, now update code for all test_data in order to plot PR curve
                     data = Dataset(set_name=set_name, batch_size=batch_size, shuffle=False, kfold=fold_num, code_length=bbn_dim)
                     update_codes(model, data, batch_size,set_name)
-                    test_hook,test_precision,pr_curve = eval_cls_map(data.test_code, data.train_code, data.test_label, data.train_label, 1000, True)
-                    make_PR_plot(summary_path, pr_curve)
+                    try:
+                        test_hook,test_precision,pr_curve = eval_cls_map(data.test_code, data.train_code, data.test_label, data.train_label, 1000, True)
+                        make_PR_plot(summary_path, pr_curve)
+                    except:
+                        print("Error happened when computing MAP and precision...\n")
                 tf.summary.scalar('test/hook', test_hook, step=i)
                 tf.summary.scalar('test/precision', test_precision, step=i)
                 
@@ -166,24 +171,26 @@ def train(set_name, bbn_dim, cbn_dim, batch_size, time_string, fold_num = 0, sup
                 checkpoint.save(file_prefix=save_name)
     return test_hook, test_precision
 
-def train_kfold(set_name, bbn_dim, cbn_dim, batch_size, supervised=False, eta=1, lamda=1, middle_dim=1024, max_iter=30000):
+def train_kfold(set_name, bbn_dim, cbn_dim, batch_size, supervised=False, gamma=1, eta=1, lamda=1, middle_dim=1024, max_iter=30000):
     hooks = []
     precs = []
     time_string = strftime("%a%d%b%Y-%H%M%S", gmtime())
     kfold = 6
     for i in range(1, kfold+1):
-        hook, prec = train(set_name, bbn_dim, cbn_dim, batch_size, time_string, i, supervised, eta, lamda, middle_dim, max_iter)
+        hook, prec = train(set_name, bbn_dim, cbn_dim, batch_size, time_string, i, supervised, gamma, eta, lamda, middle_dim, max_iter)
         hooks.append(hook)
         precs.append(prec)
     lr = 1e-4
     postfix = "lr{}".format(lr)
     if supervised:
-        postfix += "sup_eta{}_lamda{}".format(eta, lamda)
+        postfix += "sup_gamma{}_eta{}_lamda{}".format(gamma, eta, lamda)
     result_path = os.path.join(REPO_PATH, 'result', set_name, time_string+postfix)
     with open(os.path.join(result_path, "results.txt"), 'w') as f:
-        f.write("MAPS:")
+        f.write("MAPS: ")
+        hooks = [str(i) for i in hooks]
         f.write(" ".join(hooks))
-        f.write("precision@1000:")
+        f.write("\nprecision@1000: ")
+        precs = [str(i) for i in precs]
         f.write(" ".join(precs))
     print("MAP: ")
     print(hooks)

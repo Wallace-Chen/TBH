@@ -9,7 +9,7 @@ from sklearn.model_selection import KFold
 sess = tf.compat.v1.Session()
 np.set_printoptions(threshold=sys.maxsize)
 
-folder = r'E:\Users\yuan\MasterThesis\TBH\data\test\MS-COCO'
+folder = r'E:\Users\yuan\MasterThesis\TBH\data'
 test_names = ['test_batch.mat']
 train_names = ['data_batch_1.mat', 'data_batch_2.mat', 'data_batch_3.mat', 'data_batch_4.mat', 'data_batch_5.mat']
 
@@ -130,11 +130,15 @@ def disp_data(p,f):
     with open(os.path.join(out_path, f+".txt"),"w") as f:
         for element in data.take(10):
             print(element["id"].numpy())
-            print(type(element["id"].numpy()))
+#            print(type(element["id"].numpy()))
             _id = element["id"].numpy()
             _label = element["label"].numpy()
             #_label = np.where(_label==1)[0]
             _feat = element["feat"].numpy()
+            print(np.shape(_label))
+            print(np.shape(_feat))
+            if np.sum(_label) < 1:
+                print("Error! The item does not belong to any class!!")
             f.write("{}:\n".format(_id))
             f.write(' '.join( [str(e) for e in _label] ))
             f.write('\n')
@@ -142,5 +146,6 @@ def disp_data(p,f):
             f.write('\n')
     #f.write(np.array2string(_feat, precision=1, separator=','))
 
-convert_data_from_npz("MS-COCO_incv3-all")
-#disp_data("out_NUS-WIDE_incv3-all", "test_1.tfrecords")
+#convert_data_from_npz("MS-COCO_incv3-all")
+disp_data("ms-coco", "test_1.tfrecords")
+disp_data("ms-coco", "train_1.tfrecords")
